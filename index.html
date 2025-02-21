@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dividir la Cuenta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .person {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 3px;
+        }
+        .shared-item {
+            background: #e8f5e9;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .total {
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        .delete-btn {
+            background: #ff4444;
+        }
+        .delete-btn:hover {
+            background: #cc0000;
+        }
+        .tip-section {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 5px;
+        }
+        .shared-select {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calculadora de División de Cuenta</h1>
+    
+    <div id="people-container"></div>
+    
+    <button onclick="addPerson()">Agregar Persona</button>
+    <button onclick="addSharedItem()">Agregar Item Compartido</button>
+    <button onclick="calculateTotal()">Calcular Totales</button>
+    
+    <div id="shared-items-container"></div>
+    <div id="results"></div>
+
+    <script>
+        let personCount = 0;
+        let sharedItemCount = 0;
+
+        function addPerson() {
+            personCount++;
+            const container = document.getElementById('people-container');
+            const personDiv = document.createElement('div');
+            personDiv.className = 'person';
+            personDiv.id = `person-${personCount}`;
+            
+            personDiv.innerHTML = `
+                <h3>Persona ${personCount}</h3>
+                <input type="text" placeholder="Nombre" id="name-${personCount}">
+                <div class="tip-section">
+                    <label>Propina (%):
+                        <input type="number" id="tip-${personCount}" value="10" min="0" max="100">
+                    </label>
+                </div>
+                <div id="items-${personCount}"></div>
+                <button onclick="addItem(${personCount})">Agregar Consumo Individual</button>
+                <button class="delete-btn" onclick="deletePerson(${personCount})">Eliminar Persona</button>
+            `;
+            
+            container.appendChild(personDiv);
+            addItem(personCount);
+            updateSharedSelects();
+        }
+
+        function addItem(personId) {
+            const itemsContainer = document.getElementById(`items-${personId}`);
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+            
+            itemDiv.innerHTML = `
+                <input type="text" placeholder="Descripción del consumo">
+                <input type="number" step="0.01" placeholder="Precio">
+                <button class="delete-btn" onclick="this.parentElement.remove()">Eliminar</button>
+            `;
+            
+            itemsContainer.appendChild(itemDiv);
+        }
+
+        function addSharedItem() {
+            sharedItemCount++;
+            const container = document.getElementById('shared-items-container');
+            if (!container.querySelector('h2')) {
+                container.innerHTML = '<h2>Items Compartidos</h2>';
+            }
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item shared-item';
+            itemDiv.id = `shared-item-${sharedItemCount}`;
+            
+            itemDiv.innerHTML = `
+                <input type="text" placeholder="Descripción del item compartido">
+                <input type="number" step="0.01" placeholder="Precio">
+                <div class="shared-select">
+                    <p>Compartido entre:</p>
+                    <div id="shared-checkboxes-${sharedItemCount}">
+                        ${generatePersonCheckboxes(sharedItemCount)}
+                    </div>
+                </div>
+                <button class="delete-btn" onclick="this.parentElement.remove()">Eliminar</button>
+            `;
+            
+            container.appendChild(itemDiv);
+        }
+
+        function generatePersonCheckboxes(itemId) {
+            let checkboxes = '';
+            document.querySelectorAll('.person').forEach(person => {
+                const personId = person.id.split('-')[1];
+                const name = document.getElementById(`name-${personId}`).value || `Persona ${personId}`;
+                checkboxes += `
+                    <label>
+                        <input type="checkbox" name="shared-${itemId}" value="${personId}" checked>
+                        ${name}
+                    </label><br>
+                `;
+            });
+            return checkboxes;
+        }
+
+        function updateSharedSelects() {
+            document.querySelectorAll('.shared-item').forEach(item => {
+                const itemId = item.id.split('-')[2];
+                const checkboxesContainer = document.getElementById(`shared-checkboxes-${itemId}`);
+                checkboxesContainer.innerHTML = generatePersonCheckboxes(itemId);
+            });
+        }
+
+        function deletePerson(personId) {
+            const personDiv = document.getElementById(`person-${personId}`);
+            personDiv.remove();
+            updateSharedSelects();
+        }
+
+        function calculateTotal() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>Resultados:</h2>';
+            
+            let totalGeneral = 0;
+            const personas = {};
+
+            // Calcular consumos individuales
+            document.querySelectorAll('.person').forEach(person => {
+                const personId = person.id.split('-')[1];
+                const nameInput = person.querySelector(`input[id^="name"]`);
+                const name = nameInput.value || `Persona ${personId}`;
+                const tipPercentage = parseFloat(document.getElementById(`tip-${personId}`).value) || 0;
+                
+                let subtotal = 0;
+
+                // Sumar items individuales
+                person.querySelectorAll('.item').forEach(item => {
+                    const precio = parseFloat(item.querySelector('input[type="number"]').value) || 0;
+                    subtotal += precio;
+                });
+
+                personas[personId] = {
+                    name: name,
+                    subtotal: subtotal,
+                    tipPercentage: tipPercentage,
+                    sharedItems: []
+                };
+            });
+
+            // Calcular items compartidos
+            document.querySelectorAll('.shared-item').forEach(item => {
+                const precio = parseFloat(item.querySelector('input[type="number"]').value) || 0;
+                const descripcion = item.querySelector('input[type="text"]').value || 'Item compartido';
+                const selectedPersons = Array.from(item.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                
+                if (selectedPersons.length > 0) {
+                    const precioPerPerson = precio / selectedPersons.length;
+                    selectedPersons.forEach(personId => {
+                        if (personas[personId]) {
+                            personas[personId].subtotal += precioPerPerson;
+                            personas[personId].sharedItems.push({
+                                descripcion: descripcion,
+                                precio: precioPerPerson
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Generar resultados
+            Object.values(personas).forEach(persona => {
+                const tipAmount = (persona.subtotal * persona.tipPercentage) / 100;
+                const total = persona.subtotal + tipAmount;
+                totalGeneral += total;
+
+                results.innerHTML += `
+                    <div class="person-result">
+                        <h3>${persona.name}</h3>
+                        <p>Subtotal: $${persona.subtotal.toFixed(2)}</p>
+                        <p>Propina (${persona.tipPercentage}%): $${tipAmount.toFixed(2)}</p>
+                        <p><strong>Total a pagar: $${total.toFixed(2)}</strong></p>
+                        
+                        <h4>Desglose:</h4>
+                        <ul>
+                            ${Array.from(document.querySelector(`#person-${Object.keys(personas).find(key => personas[key] === persona)}`).querySelectorAll('.item')).map(item => {
+                                const desc = item.querySelector('input[type="text"]').value || 'Consumo';
+                                const precio = parseFloat(item.querySelector('input[type="number"]').value) || 0;
+                                return `<li>${desc}: $${precio.toFixed(2)}</li>`;
+                            }).join('')}
+                            ${persona.sharedItems.map(item => 
+                                `<li>${item.descripcion} (compartido): $${item.precio.toFixed(2)}</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                `;
+            });
+
+            results.innerHTML += `
+                <div class="total">
+                    Total general (incluyendo propinas): $${totalGeneral.toFixed(2)}
+                </div>
+            `;
+        }
+
+        // Agregar primera persona al cargar
+        addPerson();
+    </script>
+</body>
+</html>
