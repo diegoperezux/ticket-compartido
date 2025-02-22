@@ -3,97 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dividir la Cuenta</title>
+    <title>Split Bill</title>
     <style>
-        
-        
-@media (max-width: 768px) {
-    body {
-        padding: 10px;
-        margin: 10px;
-    }
-    
-    input, button {
-        width: fill;
-        margin: 5px 0;
-    }
-    
-    .item {
-        display: flex;
-        flex-direction: column;
-    }
-}
+        /* Variables CSS para fácil personalización desde Figma */
+        :root {
+            /* Colores del sistema */
+            --primary: #7F54F1;
+            --primary-light: #9B7AF3;
+            --secondary: #FFB323;
+            --accent: #00D1FF;
+            --success: #00BA88;
+            --error: #FF4C51;
+            
+            /* Escala de grises */
+            --gray-100: #F9FAFB;
+            --gray-200: #F3F4F6;
+            --gray-300: #E5E7EB;
+            --gray-400: #D1D5DB;
+            --gray-500: #9CA3AF;
+            --gray-600: #6B7280;
+            --gray-700: #4B5563;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+            
+            /* Espaciado - Basado en sistema de 4px */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            
+            /* Tipografía */
+            --font-primary: 'Inter', -apple-system, system-ui, sans-serif;
+            --font-size-xs: 12px;
+            --font-size-sm: 14px;
+            --font-size-md: 16px;
+            --font-size-lg: 18px;
+            --font-size-xl: 24px;
+            --font-size-2xl: 32px;
+            
+            /* Border radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+            
+            /* Sombras */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Reset y estilos base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 0 20px;
+            font-family: var(--font-primary);
+            background-color: var(--gray-100);
+            color: var(--gray-900);
+            line-height: 1.5;
         }
-        .person {
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-md);
         }
-        .item {
-            margin: 10px 0;
-            padding: 10px;
-            background: #f9f9f9;
-            border-radius: 3px;
+
+        .header {
+            text-align: center;
+            padding: var(--space-2xl) 0;
         }
-        .shared-item {
-            : #e8f5e9;
+
+        .header h1 {
+            font-size: var(--font-size-2xl);
+            color: var(--primary);
+            margin-bottom: var(--space-sm);
         }
-        button {
-            background: #4CAF50;
-            color: white;
+
+        /* Componentes */
+        .card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-lg);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .input-group {
+            margin-bottom: var(--space-md);
+        }
+
+        .label {
+            display: block;
+            font-size: var(--font-size-sm);
+            color: var(--gray-700);
+            margin-bottom: var(--space-xs);
+        }
+
+        .input {
+            width: 100%;
+            padding: var(--space-sm);
+            border: 2px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-md);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(127, 84, 241, 0.1);
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-sm) var(--space-lg);
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-md);
+            font-weight: 500;
             cursor: pointer;
-            margin: 5px;
+            transition: all 0.2s ease;
         }
-        button:hover {
-            background: #45a049;
+
+        .button-primary {
+            background-color: var(--primary);
+            color: white;
         }
-        .total {
-            font-weight: bold;
-            margin-top: 20px;
-            font-size: 1.2em;
+
+        .button-primary:hover {
+            background-color: var(--primary-light);
         }
-        .delete-btn {
-            background: #ff4444;
+
+        .button-secondary {
+            background-color: white;
+            border: 2px solid var(--gray-300);
+            color: var(--gray-700);
         }
-        .delete-btn:hover {
-            background: #cc0000;
+
+        .button-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
-        .tip-section {
-            margin: 10px 0;
-            padding: 10px;
-            background: #f0f8ff;
-            border-radius: 5px;
+
+        .button-danger {
+            background-color: var(--error);
+            color: white;
         }
-        .shared-select {
-            margin: 5px 0;
+
+        .person-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-md);
+            border: 2px solid var(--gray-200);
+        }
+
+        .shared-item-card {
+            background: var(--gray-100);
+            border: 2px solid var(--primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-md);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+            margin-top: var(--space-sm);
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            cursor: pointer;
+        }
+
+        .results {
+            margin-top: var(--space-2xl);
+        }
+
+        .result-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-lg);
+            border-left: 4px solid var(--primary);
+        }
+
+        .total-amount {
+            font-size: var(--font-size-xl);
+            color: var(--primary);
+            margin-top: var(--space-md);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--space-sm);
+            }
+
+            .button {
+                width: 100%;
+                margin-bottom: var(--space-sm);
+            }
+
+            .person-card,
+            .shared-item-card {
+                padding: var(--space-md);
+            }
+        }
+
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in {
+            animation: fadeIn 0.3s ease-out;
         }
     </style>
 </head>
 <body>
-    <h1>Calculadora de División de Cuenta</h1>
-    <div style="width: 100%; height: hug; padding-left: 0px; padding-right: 0px; padding-top: 8px; padding-bottom: 8px; justify-content: center; align-items: center; gap: 10px; display: inline-flex">
-    <div style="flex: 1 1 0; text-align: center; color: black; font-size: 32px; font-family: Alexandria; font-weight: 700; word-wrap: break-word">Te Toca Tanto</div>
-</div>
-    
-    <div id="people-container"></div>
-    
-    <button onclick="addPerson()">Agregar Persona</button>
-    <button onclick="addSharedItem()">Agregar Item Compartido</button>
-    <button onclick="calculateTotal()">Calcular Totales</button>
-    
-    <div id="shared-items-container"></div>
-    <div id="results"></div>
+    <div class="container">
+        <header class="header">
+            <h1>Split Bill</h1>
+            <p>Divide la cuenta fácilmente entre amigos</p>
+        </header>
+
+        <div id="people-container"></div>
+
+        <div class="button-group" style="display: flex; gap: var(--space-md); margin-bottom: var(--space-xl);">
+            <button onclick="addPerson()" class="button button-primary">
+                Agregar Persona
+            </button>
+            <button onclick="addSharedItem()" class="button button-secondary">
+                Agregar Item Compartido
+            </button>
+        </div>
+
+        <div id="shared-items-container"></div>
+
+        <button onclick="calculateTotal()" class="button button-primary" style="width: 100%; margin-top: var(--space-xl);">
+            Calcular Totales
+        </button>
+
+        <div id="results" class="results"></div>
+    </div>
 
     <script>
+        // El código JavaScript se mantiene igual que en la versión anterior
+        // [Aquí va todo el JavaScript de la versión anterior]
         let personCount = 0;
         let sharedItemCount = 0;
 
@@ -101,20 +279,28 @@
             personCount++;
             const container = document.getElementById('people-container');
             const personDiv = document.createElement('div');
-            personDiv.className = 'person';
+            personDiv.className = 'person-card animate-in';
             personDiv.id = `person-${personCount}`;
             
             personDiv.innerHTML = `
-                <h3>Persona ${personCount}</h3>
-                <input type="text" placeholder="Nombre" id="name-${personCount}">
-                <div class="tip-section">
-                    <label>Propina (%):
-                        <input type="number" id="tip-${personCount}" value="10" min="0" max="100">
-                    </label>
+                <h3 style="margin-bottom: var(--space-md);">Persona ${personCount}</h3>
+                <div class="input-group">
+                    <label class="label">Nombre</label>
+                    <input type="text" class="input" placeholder="Nombre" id="name-${personCount}">
+                </div>
+                <div class="input-group">
+                    <label class="label">Propina (%)</label>
+                    <input type="number" class="input" id="tip-${personCount}" value="10" min="0" max="100">
                 </div>
                 <div id="items-${personCount}"></div>
-                <button onclick="addItem(${personCount})">Agregar Consumo Individual</button>
-                <button class="delete-btn" onclick="deletePerson(${personCount})">Eliminar Persona</button>
+                <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-md);">
+                    <button onclick="addItem(${personCount})" class="button button-secondary">
+                        Agregar Consumo Individual
+                    </button>
+                    <button onclick="deletePerson(${personCount})" class="button button-danger">
+                        Eliminar Persona
+                    </button>
+                </div>
             `;
             
             container.appendChild(personDiv);
@@ -125,12 +311,22 @@
         function addItem(personId) {
             const itemsContainer = document.getElementById(`items-${personId}`);
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'item';
+            itemDiv.className = 'input-group animate-in';
             
             itemDiv.innerHTML = `
-                <input type="text" placeholder="Descripción del consumo">
-                <input type="number" step="0.01" placeholder="Precio">
-                <button class="delete-btn" onclick="this.parentElement.remove()">Eliminar</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--space-sm); align-items: end;">
+                    <div>
+                        <label class="label">Descripción</label>
+                        <input type="text" class="input" placeholder="Descripción del consumo">
+                    </div>
+                    <div>
+                        <label class="label">Precio</label>
+                        <input type="number" class="input" step="0.01" placeholder="Precio">
+                    </div>
+                    <button class="button button-danger" onclick="this.parentElement.parentElement.remove()">
+                        Eliminar
+                    </button>
+                </div>
             `;
             
             itemsContainer.appendChild(itemDiv);
@@ -140,23 +336,31 @@
             sharedItemCount++;
             const container = document.getElementById('shared-items-container');
             if (!container.querySelector('h2')) {
-                container.innerHTML = '<h2>Items Compartidos</h2>';
+                container.innerHTML = '<h2 style="margin-bottom: var(--space-lg);">Items Compartidos</h2>';
             }
             
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'item shared-item';
+            itemDiv.className = 'shared-item-card animate-in';
             itemDiv.id = `shared-item-${sharedItemCount}`;
             
             itemDiv.innerHTML = `
-                <input type="text" placeholder="Descripción del item compartido">
-                <input type="number" step="0.01" placeholder="Precio">
-                <div class="shared-select">
-                    <p>Compartido entre:</p>
-                    <div id="shared-checkboxes-${sharedItemCount}">
+                <div class="input-group">
+                    <label class="label">Descripción</label>
+                    <input type="text" class="input" placeholder="Descripción del item compartido">
+                </div>
+                <div class="input-group">
+                    <label class="label">Precio</label>
+                    <input type="number" class="input" step="0.01" placeholder="Precio">
+                </div>
+                <div class="input-group">
+                    <label class="label">Compartido entre:</label>
+                    <div class="checkbox-group" id="shared-checkboxes-${sharedItemCount}">
                         ${generatePersonCheckboxes(sharedItemCount)}
                     </div>
                 </div>
-                <button class="delete-btn" onclick="this.parentElement.remove()">Eliminar</button>
+                <button class="button button-danger" onclick="this.parentElement.remove()">
+                    Eliminar
+                </button>
             `;
             
             container.appendChild(itemDiv);
@@ -164,21 +368,21 @@
 
         function generatePersonCheckboxes(itemId) {
             let checkboxes = '';
-            document.querySelectorAll('.person').forEach(person => {
+            document.querySelectorAll('.person-card').forEach(person => {
                 const personId = person.id.split('-')[1];
                 const name = document.getElementById(`name-${personId}`).value || `Persona ${personId}`;
                 checkboxes += `
-                    <label>
+                    <label class="checkbox-label">
                         <input type="checkbox" name="shared-${itemId}" value="${personId}" checked>
-                        ${name}
-                    </label><br>
+                        <span>${name}</span>
+                    </label>
                 `;
             });
             return checkboxes;
         }
 
         function updateSharedSelects() {
-            document.querySelectorAll('.shared-item').forEach(item => {
+            document.querySelectorAll('.shared-item-card').forEach(item => {
                 const itemId = item.id.split('-')[2];
                 const checkboxesContainer = document.getElementById(`shared-checkboxes-${itemId}`);
                 checkboxesContainer.innerHTML = generatePersonCheckboxes(itemId);
@@ -193,13 +397,12 @@
 
         function calculateTotal() {
             const results = document.getElementById('results');
-            results.innerHTML = '<h2>Resultados:</h2>';
+            results.innerHTML = '<h2 style="margin-bottom: var(--space-xl);">Resultados</h2>';
             
             let totalGeneral = 0;
             const personas = {};
 
-            // Calcular consumos individuales
-            document.querySelectorAll('.person').forEach(person => {
+            document.querySelectorAll('.person-card').forEach(person => {
                 const personId = person.id.split('-')[1];
                 const nameInput = person.querySelector(`input[id^="name"]`);
                 const name = nameInput.value || `Persona ${personId}`;
@@ -207,76 +410,118 @@
                 
                 let subtotal = 0;
 
-                // Sumar items individuales
-                person.querySelectorAll('.item').forEach(item => {
-                    const precio = parseFloat(item.querySelector('input[type="number"]').value) || 0;
-                    subtotal += precio;
+                person.querySelectorAll('.input-group').forEach(item => {
+                    const inputs = item.querySelectorAll('input[type="number"]');
+                    if (inputs.length > 0) {
+                        const precio = parseFloat(inputs[0].value) || 0;
+                        subtotal += precio;
+                    }
                 });
 
                 personas[personId] = {
                     name: name,
                     subtotal: subtotal,
                     tipPercentage: tipPercentage,
-                    sharedItems: []
+                    sharedItems: [],
+                    originalItems: Array.from(person.querySelectorAll('.input-group')).map(item => {
+                        const inputs = item.querySelectorAll('input');
+                        return {
+                            descripcion: inputs[0].value || 'Consumo',
+                            precio: parseFloat(inputs[1]?.value) || 0
+                        };
+                    }).filter(item => item.precio > 0)
                 };
             });
 
-            // Calcular items compartidos
-            document.querySelectorAll('.shared-item').forEach(item => {
-                const precio = parseFloat(item.querySelector('input[type="number"]').value) || 0;
-                const descripcion = item.querySelector('input[type="text"]').value || 'Item compartido';
+            document.querySelectorAll('.shared-item-card').forEach(item => {
+                const inputs = item.querySelectorAll('input');
+                const descripcion = inputs[0].value || 'Item compartido';
+                const precio = parseFloat(inputs[1].value) || 0;
                 const selectedPersons = Array.from(item.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
                 
-                if (selectedPersons.length > 0) {
+                if (selectedPersons.length > 0 && precio > 0) {
                     const precioPerPerson = precio / selectedPersons.length;
                     selectedPersons.forEach(personId => {
                         if (personas[personId]) {
                             personas[personId].subtotal += precioPerPerson;
                             personas[personId].sharedItems.push({
                                 descripcion: descripcion,
-                                precio: precioPerPerson
+                                precio: precioPerPerson,
+                                totalParticipantes: selectedPersons.length
                             });
                         }
                     });
                 }
             });
 
-            // Generar resultados
             Object.values(personas).forEach(persona => {
                 const tipAmount = (persona.subtotal * persona.tipPercentage) / 100;
                 const total = persona.subtotal + tipAmount;
                 totalGeneral += total;
 
-                results.innerHTML += `
-                    <div class="person-result">
-                        <h3>${persona.name}</h3>
-                        <p>Subtotal: $${persona.subtotal.toFixed(2)}</p>
-                        <p>Propina (${persona.tipPercentage}%): $${tipAmount.toFixed(2)}</p>
-                        <p><strong>Total a pagar: $${total.toFixed(2)}</strong></p>
+                const resultCard = document.createElement('div');
+                resultCard.className = 'result-card animate-in';
+                resultCard.innerHTML = `
+                    <h3 style="color: var(--primary); margin-bottom: var(--space-md);">${persona.name}</h3>
+                    
+                    <div style="margin-bottom: var(--space-lg);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-sm);">
+                            <span>Subtotal:</span>
+                            <span>$${persona.subtotal.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-sm);">
+                            <span>Propina (${persona.tipPercentage}%):</span>
+                            <span>$${tipAmount.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: var(--font-size-lg); margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--gray-200);">
+                            <span>Total a pagar:</span>
+                            <span>$${total.toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--gray-100); padding: var(--space-md); border-radius: var(--radius-md);">
+                        <h4 style="margin-bottom: var(--space-md);">Desglose:</h4>
                         
-                        <h4>Desglose:</h4>
-                        <ul>
-                            ${Array.from(document.querySelector(`#person-${Object.keys(personas).find(key => personas[key] === persona)}`).querySelectorAll('.item')).map(item => {
-                                const desc = item.querySelector('input[type="text"]').value || 'Consumo';
-                                const precio = parseFloat(item.querySelector('input[type="number"]').value) || 0;
-                                return `<li>${desc}: $${precio.toFixed(2)}</li>`;
-                            }).join('')}
-                            ${persona.sharedItems.map(item => 
-                                `<li>${item.descripcion} (compartido): $${item.precio.toFixed(2)}</li>`
-                            ).join('')}
-                        </ul>
+                        ${persona.originalItems.length > 0 ? `
+                            <div style="margin-bottom: var(--space-md);">
+                                <h5 style="color: var(--gray-600); margin-bottom: var(--space-sm);">Consumos individuales:</h5>
+                                ${persona.originalItems.map(item => `
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-xs);">
+                                        <span>${item.descripcion}</span>
+                                        <span>$${item.precio.toFixed(2)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${persona.sharedItems.length > 0 ? `
+                            <div>
+                                <h5 style="color: var(--gray-600); margin-bottom: var(--space-sm);">Items compartidos:</h5>
+                                ${persona.sharedItems.map(item => `
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-xs);">
+                                        <span>${item.descripcion} (dividido entre ${item.totalParticipantes})</span>
+                                        <span>$${item.precio.toFixed(2)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
                     </div>
                 `;
+                
+                results.appendChild(resultCard);
             });
 
-            results.innerHTML += `
-                <div class="total">
-                    Total general (incluyendo propinas): $${totalGeneral.toFixed(2)}
-                </div>
+            const totalCard = document.createElement('div');
+            totalCard.className = 'result-card animate-in';
+            totalCard.innerHTML = `
+                <h3 style="color: var(--primary); margin-bottom: var(--space-md);">Total General</h3>
+                <div class="total-amount">$${totalGeneral.toFixed(2)}</div>
+                <p style="color: var(--gray-600); margin-top: var(--space-sm);">Incluyendo todas las propinas</p>
             `;
+            results.appendChild(totalCard);
         }
 
-        // Agregar primera persona al cargar
+        // Iniciar con una persona
         addPerson();
     </script>
 </body>
