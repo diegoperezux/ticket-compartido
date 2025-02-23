@@ -11,6 +11,8 @@
             --primary: #3e56cf;
             --primary-light: #4e69f2;
             --secondary: #FFB323;
+            --tertiary: #51993d;
+            --tertiary-light: #73cb5b;
             --accent: #00D1FF;
             --success: #00BA88;
             --error: #FF4C51;
@@ -166,6 +168,19 @@
             color: var(--primary);
         }
 
+        .button-tertiary {
+            background: #51993d;
+            color: #ffffff !important;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .button-tertiary:hover {
+            background: white;
+            color: #51993d !important;
+            border: 2px solid #51993d;
+        }
+
         .button-danger {
             background-color: var(--error);
             color: white;
@@ -219,15 +234,26 @@
             margin-top: var(--space-md);
         }
 
+        .button-stack {
+            display: flex;
+            gap: var(--space-md);
+            justify-content: center;
+            margin-top: var(--space-md);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: var(--space-sm);
             }
 
+            .button-stack {
+                flex-direction: column;
+                width: 100%;
+            }
+
             .button {
                 width: 100%;
-                margin-bottom: var(--space-sm);
             }
 
             .person-card,
@@ -245,29 +271,55 @@
         .animate-in {
             animation: fadeIn 0.3s ease-out;
         }
+
+        .button-tertiary {
+            background: #51993d;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .button-tertiary:hover {
+            background: var(--gray-200);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
             <h1>Divide la cuenta</h1>
-            <p>Divide la cuenta fácilmente, sin complicaciones</p>
+            <p>En línea, sin descargar apps</p>
         </header>
+
+        <div class="person-card animate-in" style="margin-bottom: var(--space-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" 
+                 onclick="toggleDescription(this)">
+                <h3 style="color: var(--primary); margin-bottom: var(--space-md);">¿Cómo funciona?</h3>
+                <span class="toggle-icon" style="font-size: 1.5em; color: var(--primary);">−</span>
+            </div>
+            <div class="description-content">
+                <ol style="color: var(--gray-700); padding-left: var(--space-xl);">
+                    <li style="margin-bottom: var(--space-sm);">Agrega a cada persona que participará en la cuenta</li>
+                    <li style="margin-bottom: var(--space-sm);">Ingresa los platillos individuales de cada persona</li>
+                    <li style="margin-bottom: var(--space-sm);">Si hay platillos compartidos, agrégalos y selecciona quiénes participan</li>
+                    <li style="margin-bottom: var(--space-sm);">Opcionalmente, agrega el porcentaje de propina para cada persona</li>
+                    <li>¡Listo! Presiona calcular y obtén el desglose detallado</li>
+                </ol>
+            </div>
+        </div>
 
         <div id="people-container"></div>
 
-        <div class="button-group" style="display: flex; gap: var(--space-md); justify-content: center; margin-bottom: var(--space-xl);">
-            <button onclick="addPerson()" class="button button-primary">
-                Agregar persona
-            </button>
-            <button onclick="addSharedItem()" class="button button-secondary">
-                Agregar platillo compartido
+        <div class="button-group" style="display: flex; gap: var(--space-md); justify-content: center; margin-bottom: var(--space-md);">
+            <button onclick="addFirstPerson()" class="button button-primary" id="startButton">
+                Comenzar
             </button>
         </div>
 
         <div id="shared-items-container"></div>
 
-        <button onclick="calculateTotal()" class="button button-primary" style="width: 100%; margin-top: var(--space-xs);">
+        <div class="divider" style="margin: var(--space-sm) 0;"></div>
+
+        <button onclick="calculateTotal()" class="button button-primary" style="width: 100%; margin-top: var(--space-xs); display: none;" id="calculateButton">
             Calcular totales
         </button>
 
@@ -280,7 +332,6 @@
      
         let personCount = 0;
         let sharedItemCount = 0;
-
         function addPerson() {
             personCount++;
             const container = document.getElementById('people-container');
@@ -295,54 +346,77 @@
                     <input type="text" class="input" placeholder="Escribe aquí" id="name-${personCount}">
                 </div>
                 <div class="input-group">
-                    <label class="label">Propina (%)</label>
-                    <input type="number" class="input" id="tip-${personCount}" placeholder="Ingresa la propina (opcional)" min="0" max="100">
+                    <label class="label">Propina</label>
+                    <div style="position: relative;">
+                        <input type="number" 
+                               class="input" 
+                               id="tip-${personCount}" 
+                               style="padding-right: 24px;"
+                               placeholder="0"
+                               min="0" 
+                               max="100"
+                               inputmode="decimal"
+                               pattern="[0-9]*">
+                        <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-600);">%</span>
+                    </div>
                 </div>
                 <div id="items-${personCount}"></div>
                 
-      
-      <div class="divider"></div>
-       
-                <div style="display: flex; gap: var(--space-md); justify-content: center; margin-top: var(--space-md);">
+                <div class="divider"></div>
+                
+                <div class="button-stack">
                     <button onclick="addItem(${personCount})" class="button button-secondary">
                         Agregar otro platillo
                     </button>
-                    <button onclick="deletePerson(${personCount})" class="button button-danger">
-                        Eliminar persona
+                    <button onclick="addSharedItem()" class="button button-secondary">
+                        Agregar platillo compartido
                     </button>
+                    ${personCount > 1 ? `
+                        <button onclick="deletePerson(${personCount})" class="button button-danger">
+                            Eliminar persona
+                        </button>
+                    ` : ''}
                 </div>
             `;
             
             container.appendChild(personDiv);
             addItem(personCount);
             updateSharedSelects();
+            document.getElementById('calculateButton').style.display = 'block';
         }
 
         function addItem(personId) {
             const itemsContainer = document.getElementById(`items-${personId}`);
+            const itemCount = itemsContainer.children.length;
             const itemDiv = document.createElement('div');
             itemDiv.className = 'input-group animate-in';
             
-          
             itemDiv.innerHTML = `
-             
-         <div class="divider"></div>
-
-   <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-sm); align-items: start;">
-    <div>
-        <label class="label">Nombre del platillo</label>
-        <input type="text" class="input" placeholder="Escribe aquí">
-    </div>
-    <div>
-        <label class="label">Precio</label>
-        <input type="number" class="input"  step="0.01" placeholder="Ingresa el precio">
-    </div>
-    <button class="button button-danger" onclick="this.parentElement.remove()" style="justify-self: end; margin-top: var(--space-md);">
-        Eliminar platillo
-    </button>
-</div>
-
-
+                <div class="divider"></div>
+                <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-sm); align-items: start;">
+                    <div>
+                        <label class="label">Nombre del platillo</label>
+                        <input type="text" class="input" placeholder="Escribe aquí">
+                    </div>
+                    <div>
+                        <label class="label">Precio</label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-600);">$</span>
+                            <input type="number" 
+                                   class="input" 
+                                   style="padding-left: 24px;"
+                                   step="0.01" 
+                                   inputmode="decimal" 
+                                   pattern="[0-9]*"
+                                   placeholder="0.00">
+                        </div>
+                    </div>
+                    ${itemCount > 0 ? `
+                        <button class="button button-danger" onclick="this.parentElement.parentElement.remove()" style="justify-self: end; margin-top: var(--space-md);">
+                            Eliminar platillo
+                        </button>
+                    ` : ''}
+                </div>
             `;
             
             itemsContainer.appendChild(itemDiv);
@@ -366,7 +440,16 @@
                 </div>
                 <div class="input-group">
                     <label class="label">Precio</label>
-                    <input type="number" class="input" step="0.01" placeholder="Precio">
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-600);">$</span>
+                        <input type="number" 
+                               class="input" 
+                               style="padding-left: 24px;"
+                               step="0.01" 
+                               inputmode="decimal" 
+                               pattern="[0-9]*"
+                               placeholder="0.00">
+                    </div>
                 </div>
                 <div class="input-group">
                     <label class="label">Compartido entre:</label>
@@ -537,8 +620,28 @@
             results.appendChild(totalCard);
         }
 
-        // Iniciar con una persona
-        addPerson();
+        function toggleDescription(element) {
+            const content = element.nextElementSibling;
+            const icon = element.querySelector('.toggle-icon');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '−';
+                content.classList.add('animate-in');
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '+';
+            }
+        }
+
+        function addFirstPerson() {
+            const startButton = document.getElementById('startButton');
+            startButton.textContent = 'Agregar persona';
+            startButton.onclick = addPerson;
+            startButton.className = 'button button-tertiary';
+            
+            addPerson();
+        }
     </script>
 </body>
 </html>
