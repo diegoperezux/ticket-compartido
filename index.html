@@ -256,7 +256,7 @@
 
         <div id="people-container"></div>
 
-        <div class="button-group" style="display: flex; gap: var(--space-md); margin-bottom: var(--space-xl);">
+        <div class="button-group" style="display: flex; gap: var(--space-md); justify-content: center; margin-bottom: var(--space-xl);">
             <button onclick="addPerson()" class="button button-primary">
                 Agregar persona
             </button>
@@ -302,7 +302,7 @@
                 
       <div class="divider"></div>
        
-                <div style="display: flex; gap: var(--space-md); margin-top: var(--space-md);">
+                <div style="display: flex; gap: var(--space-md); justify-content: center; margin-top: var(--space-md);">
                     <button onclick="addItem(${personCount})" class="button button-secondary">
                         Agregar otro platillo
                     </button>
@@ -323,19 +323,21 @@
             itemDiv.className = 'input-group animate-in';
             
             itemDiv.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--space-sm); align-items: end;">
-                    <div>
-                        <label class="label">Nombre del platillo</label>
-                        <input type="text" class="input" placeholder="Escribe aquí">
-                    </div>
-                    <div>
-                        <label class="label">Precio</label>
-                        <input type="number" class="input" step="0.01" placeholder="Ingresa el precio">
-                    </div>
-                    <button class="button button-danger" onclick="this.parentElement.parentElement.remove()">
-                        Eliminar platillo
-                    </button>
-                </div>
+                <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-sm); align-items: start;">
+    <div>
+        <label class="label">Nombre del platillo</label>
+        <input type="text" class="input" placeholder="Escribe aquí">
+    </div>
+    <div>
+        <label class="label">Precio</label>
+        <input type="number" class="input"  step="0.01" placeholder="Ingresa el precio">
+    </div>
+    <button class="button button-danger" onclick="this.parentElement.remove()" style="justify-self: end; margin-top: var(--space-md);">
+        Eliminar platillo
+    </button>
+</div>
+
+
             `;
             
             itemsContainer.appendChild(itemDiv);
