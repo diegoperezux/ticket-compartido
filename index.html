@@ -281,6 +281,70 @@
         .button-tertiary:hover {
             background: var(--gray-200);
         }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .input.error {
+            border-color: #dc3545;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            padding: var(--space-xl);
+            border-radius: 8px;
+            max-width: 90%;
+            width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalIn 0.3s ease-out;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: var(--space-md);
+            margin-top: var(--space-xl);
+        }
+
+        @media (max-width: 768px) {
+            .modal {
+                padding: var(--space-lg);
+                width: 95%;
+            }
+
+            .modal-buttons {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
@@ -309,7 +373,7 @@
 
         <div id="people-container"></div>
 
-        <div class="button-group" style="display: flex; gap: var(--space-md); justify-content: center; margin-bottom: var(--space-md);">
+        <div class="button-group" style="display: flex; gap: var(--space-md); justify-content: center; margin-bottom: var(--space-xl);">
             <button onclick="addFirstPerson()" class="button button-primary" id="startButton">
                 Comenzar
             </button>
@@ -326,12 +390,37 @@
         <div id="results" class="results"></div>
     </div>
 
+    <div class="modal-overlay" id="resultsModal">
+        <div class="modal">
+            <div id="modalContent"></div>
+            <div class="modal-buttons">
+                <button onclick="closeModal()" class="button button-secondary" style="flex: 1;">
+                    Seguir editando
+                </button>
+                <button onclick="resetCalculator()" class="button button-danger" style="flex: 1;">
+                    Nueva cuenta
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
       
         // El código JavaScript se mantiene igual que en la versión anterior
      
         let personCount = 0;
         let sharedItemCount = 0;
+        function addFirstPerson() {
+            // Agregar la primera persona
+            addPerson();
+            
+            // Cambiar el botón de comenzar
+            const startButton = document.getElementById('startButton');
+            startButton.textContent = 'Agregar persona';
+            startButton.onclick = addPerson;
+            startButton.className = 'button button-tertiary';
+        }
+
         function addPerson() {
             personCount++;
             const container = document.getElementById('people-container');
@@ -342,11 +431,17 @@
             personDiv.innerHTML = `
                 <h3 style="margin-bottom: var(--space-md);">Persona ${personCount}</h3>
                 <div class="input-group">
-                    <label class="label">Nombre de la persona</label>
-                    <input type="text" class="input" placeholder="Escribe aquí" id="name-${personCount}">
+                    <label class="label">Nombre</label>
+                    <input type="text" 
+                           class="input" 
+                           placeholder="Escribe aquí" 
+                           id="name-${personCount}"
+                           onblur="validateName(this)"
+                           oninput="checkInitialFields(${personCount})">
+                    <div class="error-message">El nombre es requerido</div>
                 </div>
                 <div class="input-group">
-                    <label class="label">Propina (opcional)</label>
+                    <label class="label">Propina</label>
                     <div style="position: relative;">
                         <input type="number" 
                                class="input" 
@@ -356,16 +451,22 @@
                                min="0" 
                                max="100"
                                inputmode="decimal"
-                               pattern="[0-9]*">
+                               pattern="[0-9]*"
+                               onblur="validateTip(this)"
+                               oninput="checkInitialFields(${personCount})">
                         <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-600);">%</span>
                     </div>
+                    <div class="error-message">La propina debe estar entre 0 y 100</div>
                 </div>
                 <div id="items-${personCount}"></div>
                 
                 <div class="divider"></div>
                 
                 <div class="button-stack">
-                    <button onclick="addItem(${personCount})" class="button button-secondary">
+                    <button onclick="addItem(${personCount})" 
+                            class="button button-secondary" 
+                            id="addItemBtn-${personCount}" 
+                            style="display: none;">
                         Agregar otro platillo
                     </button>
                     <button onclick="addSharedItem()" class="button button-secondary">
@@ -380,14 +481,13 @@
             `;
             
             container.appendChild(personDiv);
-            addItem(personCount);
+            addFirstItem(personCount);
             updateSharedSelects();
             document.getElementById('calculateButton').style.display = 'block';
         }
 
-        function addItem(personId) {
+        function addFirstItem(personId) {
             const itemsContainer = document.getElementById(`items-${personId}`);
-            const itemCount = itemsContainer.children.length;
             const itemDiv = document.createElement('div');
             itemDiv.className = 'input-group animate-in';
             
@@ -396,7 +496,13 @@
                 <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-sm); align-items: start;">
                     <div>
                         <label class="label">Nombre del platillo</label>
-                        <input type="text" class="input" placeholder="Escribe aquí">
+                        <input type="text" 
+                               class="input" 
+                               placeholder="Escribe aquí" 
+                               onblur="validateItemName(this)"
+                               oninput="checkInitialFields(${personId})"
+                               id="firstItemName-${personId}">
+                        <div class="error-message">El nombre del platillo es requerido</div>
                     </div>
                     <div>
                         <label class="label">Precio</label>
@@ -408,24 +514,117 @@
                                    step="0.01" 
                                    inputmode="decimal" 
                                    pattern="[0-9]*"
-                                   placeholder="0.00">
+                                   placeholder="0.00"
+                                   onblur="validatePrice(this)"
+                                   oninput="checkInitialFields(${personId})"
+                                   id="firstItemPrice-${personId}">
                         </div>
+                        <div class="error-message">El precio debe ser mayor a 0</div>
                     </div>
-                    ${itemCount > 0 ? `
-                        <button class="button button-danger" onclick="this.parentElement.parentElement.remove()" style="justify-self: end; margin-top: var(--space-md);">
-                            Eliminar platillo
-                        </button>
-                    ` : ''}
                 </div>
             `;
             
             itemsContainer.appendChild(itemDiv);
         }
 
+        function checkInitialFields(personId) {
+            const name = document.getElementById(`name-${personId}`).value.trim();
+            const itemName = document.getElementById(`firstItemName-${personId}`).value.trim();
+            const itemPrice = document.getElementById(`firstItemPrice-${personId}`).value.trim();
+            const addItemBtn = document.getElementById(`addItemBtn-${personId}`);
+            
+            if (name && itemName && itemPrice && parseFloat(itemPrice) > 0) {
+                addItemBtn.style.display = 'block';
+            } else {
+                addItemBtn.style.display = 'none';
+            }
+        }
+
+        function addItem(personId) {
+            const itemsContainer = document.getElementById(`items-${personId}`);
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'input-group animate-in';
+            const itemCount = itemsContainer.children.length + 1;
+            
+            itemDiv.innerHTML = `
+                <div class="divider"></div>
+                <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-sm); align-items: start;">
+                    <div>
+                        <label class="label">Nombre del platillo</label>
+                        <input type="text" 
+                               class="input" 
+                               placeholder="Escribe aquí" 
+                               onblur="validateItemName(this)"
+                               oninput="checkAdditionalItem(this)"
+                               id="itemName-${personId}-${itemCount}">
+                        <div class="error-message">El nombre del platillo es requerido</div>
+                    </div>
+                    <div>
+                        <label class="label">Precio</label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-600);">$</span>
+                            <input type="number" 
+                                   class="input" 
+                                   style="padding-left: 24px;"
+                                   step="0.01" 
+                                   inputmode="decimal" 
+                                   pattern="[0-9]*"
+                                   placeholder="0.00"
+                                   onblur="validatePrice(this)"
+                                   oninput="checkAdditionalItem(this)"
+                                   id="itemPrice-${personId}-${itemCount}">
+                        </div>
+                        <div class="error-message">El precio debe ser mayor a 0</div>
+                    </div>
+                    <button class="button button-danger" 
+                            onclick="deleteItem(this, ${personId})" 
+                            style="justify-self: end; margin-top: var(--space-md); display: none;"
+                            id="deleteBtn-${personId}-${itemCount}">
+                        Eliminar platillo
+                    </button>
+                </div>
+            `;
+            
+            itemsContainer.appendChild(itemDiv);
+        }
+
+        function checkAdditionalItem(input) {
+            const itemDiv = input.closest('.input-group');
+            const nameInput = itemDiv.querySelector('input[type="text"]');
+            const priceInput = itemDiv.querySelector('input[type="number"]');
+            const deleteButton = itemDiv.querySelector('.button-danger');
+            
+            if (nameInput.value.trim() && priceInput.value.trim() && parseFloat(priceInput.value) > 0) {
+                deleteButton.style.display = 'block';
+            } else {
+                deleteButton.style.display = 'none';
+            }
+        }
+
+        function deleteItem(button, personId) {
+            const itemDiv = button.closest('.input-group');
+            itemDiv.remove();
+            
+            // Reorganizar IDs de los items restantes
+            const itemsContainer = document.getElementById(`items-${personId}`);
+            const items = itemsContainer.getElementsByClassName('input-group');
+            Array.from(items).forEach((item, index) => {
+                const itemCount = index + 1;
+                const nameInput = item.querySelector('input[type="text"]');
+                const priceInput = item.querySelector('input[type="number"]');
+                const deleteBtn = item.querySelector('.button-danger');
+                
+                if (nameInput) nameInput.id = `itemName-${personId}-${itemCount}`;
+                if (priceInput) priceInput.id = `itemPrice-${personId}-${itemCount}`;
+                if (deleteBtn) deleteBtn.id = `deleteBtn-${personId}-${itemCount}`;
+            });
+        }
+
         function addSharedItem() {
             sharedItemCount++;
             const container = document.getElementById('shared-items-container');
-            if (!container.querySelector('h2')) {
+            
+            if (!container.children.length) {
                 container.innerHTML = '<h2 style="margin-bottom: var(--space-lg);">Items Compartidos</h2>';
             }
             
@@ -436,7 +635,12 @@
             itemDiv.innerHTML = `
                 <div class="input-group">
                     <label class="label">Descripción</label>
-                    <input type="text" class="input" placeholder="Descripción del item compartido">
+                    <input type="text" 
+                           class="input" 
+                           placeholder="Descripción del item compartido"
+                           onblur="validateSharedItem(this)"
+                           oninput="handleSharedItemInput(this)">
+                    <div class="error-message">La descripción es requerida</div>
                 </div>
                 <div class="input-group">
                     <label class="label">Precio</label>
@@ -448,16 +652,22 @@
                                step="0.01" 
                                inputmode="decimal" 
                                pattern="[0-9]*"
-                               placeholder="0.00">
+                               placeholder="0.00"
+                               onblur="validateSharedItem(this)"
+                               oninput="handleSharedItemInput(this)">
+                        <div class="error-message">El precio debe ser mayor a 0</div>
                     </div>
                 </div>
                 <div class="input-group">
                     <label class="label">Compartido entre:</label>
                     <div class="checkbox-group" id="shared-checkboxes-${sharedItemCount}">
-                        ${generatePersonCheckboxes(sharedItemCount)}
+                        ${generatePersonCheckboxes()}
                     </div>
+                    <div class="error-message">Selecciona al menos una persona</div>
                 </div>
-                <button class="button button-danger" onclick="this.parentElement.remove()">
+                <button class="button button-danger" 
+                        onclick="this.parentElement.remove()" 
+                        style="display: none;">
                     Eliminar
                 </button>
             `;
@@ -465,26 +675,86 @@
             container.appendChild(itemDiv);
         }
 
-        function generatePersonCheckboxes(itemId) {
-            let checkboxes = '';
-            document.querySelectorAll('.person-card').forEach(person => {
-                const personId = person.id.split('-')[1];
-                const name = document.getElementById(`name-${personId}`).value || `Persona ${personId}`;
-                checkboxes += `
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="shared-${itemId}" value="${personId}" checked>
+        function generatePersonCheckboxes() {
+            let checkboxesHTML = '';
+            for (let i = 1; i <= personCount; i++) {
+                const name = document.getElementById(`name-${i}`).value || `Persona ${i}`;
+                checkboxesHTML += `
+                    <label style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-xs);">
+                        <input type="checkbox" 
+                               onchange="validateSharedItem(this); handleSharedItemInput(this)">
                         <span>${name}</span>
                     </label>
                 `;
-            });
-            return checkboxes;
+            }
+            return checkboxesHTML;
+        }
+
+        function validateSharedItem(input) {
+            const itemCard = input.closest('.shared-item-card');
+            const nameInput = itemCard.querySelector('input[type="text"]');
+            const priceInput = itemCard.querySelector('input[type="number"]');
+            const checkboxes = itemCard.querySelector('.checkbox-group').getElementsByTagName('input');
+            const deleteButton = itemCard.querySelector('.button-danger');
+            
+            let isValid = true;
+            
+            // Validar nombre
+            if (!nameInput.value.trim()) {
+                nameInput.classList.add('error');
+                nameInput.nextElementSibling.style.display = 'block';
+                isValid = false;
+            } else {
+                nameInput.classList.remove('error');
+                nameInput.nextElementSibling.style.display = 'none';
+            }
+            
+            // Validar precio
+            const price = parseFloat(priceInput.value);
+            if (!price || price <= 0) {
+                priceInput.classList.add('error');
+                priceInput.parentElement.nextElementSibling.style.display = 'block';
+                isValid = false;
+            } else {
+                priceInput.classList.remove('error');
+                priceInput.parentElement.nextElementSibling.style.display = 'none';
+            }
+            
+            // Validar checkboxes
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const errorMessage = itemCard.querySelector('.checkbox-group + .error-message');
+            if (checkedCount === 0) {
+                errorMessage.style.display = 'block';
+                isValid = false;
+            } else {
+                errorMessage.style.display = 'none';
+            }
+            
+            return isValid;
+        }
+
+        function handleSharedItemInput(input) {
+            const itemCard = input.closest('.shared-item-card');
+            const nameInput = itemCard.querySelector('input[type="text"]');
+            const priceInput = itemCard.querySelector('input[type="number"]');
+            const checkboxes = itemCard.querySelector('.checkbox-group').getElementsByTagName('input');
+            const deleteButton = itemCard.querySelector('.button-danger');
+            
+            // Mostrar botón de eliminar si todos los campos requeridos están llenos
+            if (nameInput.value.trim() && 
+                parseFloat(priceInput.value) > 0 && 
+                Array.from(checkboxes).some(cb => cb.checked)) {
+                deleteButton.style.display = 'block';
+            } else {
+                deleteButton.style.display = 'none';
+            }
         }
 
         function updateSharedSelects() {
-            document.querySelectorAll('.shared-item-card').forEach(item => {
-                const itemId = item.id.split('-')[2];
-                const checkboxesContainer = document.getElementById(`shared-checkboxes-${itemId}`);
-                checkboxesContainer.innerHTML = generatePersonCheckboxes(itemId);
+            const sharedItems = document.getElementById('shared-items-container').getElementsByClassName('shared-item-card');
+            Array.from(sharedItems).forEach(item => {
+                const checkboxGroup = item.querySelector('.checkbox-group');
+                checkboxGroup.innerHTML = generatePersonCheckboxes();
             });
         }
 
@@ -494,153 +764,254 @@
             updateSharedSelects();
         }
 
+        function validateName(input) {
+            const errorMessage = input.nextElementSibling;
+            if (!input.value.trim()) {
+                input.classList.add('error');
+                errorMessage.style.display = 'block';
+                return false;
+            }
+            input.classList.remove('error');
+            errorMessage.style.display = 'none';
+            return true;
+        }
+
+        function validateTip(input) {
+            const errorMessage = input.parentElement.nextElementSibling;
+            const value = parseFloat(input.value);
+            if (input.value && (isNaN(value) || value < 0 || value > 100)) {
+                input.classList.add('error');
+                errorMessage.style.display = 'block';
+                return false;
+            }
+            input.classList.remove('error');
+            errorMessage.style.display = 'none';
+            return true;
+        }
+
+        function validateItemName(input) {
+            const errorMessage = input.nextElementSibling;
+            if (!input.value.trim()) {
+                input.classList.add('error');
+                errorMessage.style.display = 'block';
+                return false;
+            }
+            input.classList.remove('error');
+            errorMessage.style.display = 'none';
+            return true;
+        }
+
+        function validatePrice(input) {
+            const errorMessage = input.parentElement.nextElementSibling;
+            const value = parseFloat(input.value);
+            if (!input.value || isNaN(value) || value <= 0) {
+                input.classList.add('error');
+                errorMessage.style.display = 'block';
+                return false;
+            }
+            input.classList.remove('error');
+            errorMessage.style.display = 'none';
+            return true;
+        }
+
         function calculateTotal() {
-            const results = document.getElementById('results');
-            results.innerHTML = '<h2 style="margin-bottom: var(--space-xl);">Resultados</h2>';
-            
+            // Validar que haya al menos una persona
+            if (personCount === 0) {
+                alert('Debes agregar al menos una persona para calcular los totales');
+                return;
+            }
+
+            // Validar todos los campos antes de calcular
+            let isValid = true;
+            for (let i = 1; i <= personCount; i++) {
+                const nameInput = document.getElementById(`name-${i}`);
+                if (!validateName(nameInput)) {
+                    isValid = false;
+                }
+            }
+
+            if (!isValid) {
+                alert('Por favor, corrige los errores antes de calcular los totales');
+                return;
+            }
+
+            const modalContent = document.getElementById('modalContent');
             let totalGeneral = 0;
-            const personas = {};
+            const personTotals = [];
 
-            document.querySelectorAll('.person-card').forEach(person => {
-                const personId = person.id.split('-')[1];
-                const nameInput = person.querySelector(`input[id^="name"]`);
-                const name = nameInput.value || `Persona ${personId}`;
-                const tipPercentage = parseFloat(document.getElementById(`tip-${personId}`).value) || 0;
+            // Calcular totales por persona
+            for (let i = 1; i <= personCount; i++) {
+                const name = document.getElementById(`name-${i}`).value || `Persona ${i}`;
+                const tip = parseFloat(document.getElementById(`tip-${i}`).value) || 0;
                 
+                // Calcular items individuales
                 let subtotal = 0;
-
-                person.querySelectorAll('.input-group').forEach(item => {
-                    const inputs = item.querySelectorAll('input[type="number"]');
-                    if (inputs.length > 0) {
-                        const precio = parseFloat(inputs[0].value) || 0;
-                        subtotal += precio;
+                let itemsList = '';
+                const itemsContainer = document.getElementById(`items-${i}`);
+                const items = itemsContainer.getElementsByClassName('input-group');
+                
+                Array.from(items).forEach(item => {
+                    const nameInput = item.querySelector('input[type="text"]');
+                    const priceInput = item.querySelector('input[type="number"]');
+                    if (nameInput && priceInput && nameInput.value && priceInput.value) {
+                        const itemName = nameInput.value;
+                        const itemPrice = parseFloat(priceInput.value);
+                        subtotal += itemPrice;
+                        itemsList += `
+                            <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-xs);">
+                                <span>${itemName}</span>
+                                <span>$${itemPrice.toFixed(2)}</span>
+                            </div>
+                        `;
                     }
                 });
 
-                personas[personId] = {
-                    name: name,
-                    subtotal: subtotal,
-                    tipPercentage: tipPercentage,
-                    sharedItems: [],
-                    originalItems: Array.from(person.querySelectorAll('.input-group')).map(item => {
-                        const inputs = item.querySelectorAll('input');
-                        return {
-                            descripcion: inputs[0].value || 'Consumo',
-                            precio: parseFloat(inputs[1]?.value) || 0
-                        };
-                    }).filter(item => item.precio > 0)
-                };
-            });
-
-            document.querySelectorAll('.shared-item-card').forEach(item => {
-                const inputs = item.querySelectorAll('input');
-                const descripcion = inputs[0].value || 'Item compartido';
-                const precio = parseFloat(inputs[1].value) || 0;
-                const selectedPersons = Array.from(item.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-                
-                if (selectedPersons.length > 0 && precio > 0) {
-                    const precioPerPerson = precio / selectedPersons.length;
-                    selectedPersons.forEach(personId => {
-                        if (personas[personId]) {
-                            personas[personId].subtotal += precioPerPerson;
-                            personas[personId].sharedItems.push({
-                                descripcion: descripcion,
-                                precio: precioPerPerson,
-                                totalParticipantes: selectedPersons.length
-                            });
+                // Calcular items compartidos
+                let sharedTotal = 0;
+                let sharedItemsList = '';
+                const sharedContainer = document.getElementById('shared-items-container');
+                if (sharedContainer) {
+                    const sharedItems = sharedContainer.getElementsByClassName('shared-item-card');
+                    Array.from(sharedItems).forEach(item => {
+                        const nameInput = item.querySelector('input[type="text"]');
+                        const priceInput = item.querySelector('input[type="number"]');
+                        const checkboxes = item.querySelector('.checkbox-group').getElementsByTagName('input');
+                        
+                        if (nameInput && priceInput && checkboxes) {
+                            const itemName = nameInput.value;
+                            const itemPrice = parseFloat(priceInput.value) || 0;
+                            const participantes = Array.from(checkboxes).filter(cb => cb.checked).length;
+                            
+                            if (participantes > 0 && checkboxes[i-1].checked) {
+                                const precioPorPersona = itemPrice / participantes;
+                                sharedTotal += precioPorPersona;
+                                sharedItemsList += `
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-xs);">
+                                        <span>${itemName} (compartido entre ${participantes})</span>
+                                        <span>$${precioPorPersona.toFixed(2)}</span>
+                                    </div>
+                                `;
+                            }
                         }
                     });
                 }
-            });
 
-            Object.values(personas).forEach(persona => {
-                const tipAmount = (persona.subtotal * persona.tipPercentage) / 100;
-                const total = persona.subtotal + tipAmount;
+                // Calcular totales finales
+                const subtotalConCompartidos = subtotal + sharedTotal;
+                const tipAmount = (subtotalConCompartidos * tip) / 100;
+                const total = subtotalConCompartidos + tipAmount;
                 totalGeneral += total;
 
-                const resultCard = document.createElement('div');
-                resultCard.className = 'result-card animate-in';
-                resultCard.innerHTML = `
-                    <h3 style="color: var(--primary); margin-bottom: var(--space-md);">${persona.name}</h3>
-                    
-                    <div style="margin-bottom: var(--space-lg);">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-sm);">
-                            <span>Subtotal:</span>
-                            <span>$${persona.subtotal.toFixed(2)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-sm);">
-                            <span>Propina (${persona.tipPercentage}%):</span>
-                            <span>$${tipAmount.toFixed(2)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: var(--font-size-lg); margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--gray-200);">
-                            <span>Total a pagar:</span>
-                            <span>$${total.toFixed(2)}</span>
-                        </div>
-                    </div>
+                personTotals.push({
+                    name,
+                    itemsList,
+                    sharedItemsList,
+                    subtotal: subtotalConCompartidos,
+                    tip,
+                    tipAmount,
+                    total
+                });
+            }
 
-                    <div style="background: var(--gray-100); padding: var(--space-md); border-radius: var(--radius-md);">
-                        <h4 style="margin-bottom: var(--space-md);">Desglose:</h4>
+            // Generar HTML de resultados
+            let resultHTML = `
+                <h3 style="color: var(--primary); margin-bottom: var(--space-xl); text-align: center;">
+                    Desglose de la cuenta
+                </h3>
+            `;
+
+            personTotals.forEach(person => {
+                resultHTML += `
+                    <div class="person-card" style="margin-bottom: var(--space-lg);">
+                        <h4 style="color: var(--primary); margin-bottom: var(--space-md);">${person.name}</h4>
                         
-                        ${persona.originalItems.length > 0 ? `
+                        ${person.itemsList ? `
                             <div style="margin-bottom: var(--space-md);">
-                                <h5 style="color: var(--gray-600); margin-bottom: var(--space-sm);">Consumos individuales:</h5>
-                                ${persona.originalItems.map(item => `
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-xs);">
-                                        <span>${item.descripcion}</span>
-                                        <span>$${item.precio.toFixed(2)}</span>
-                                    </div>
-                                `).join('')}
+                                <p style="color: var(--gray-700); margin-bottom: var(--space-xs);">Items individuales:</p>
+                                ${person.itemsList}
                             </div>
                         ` : ''}
                         
-                        ${persona.sharedItems.length > 0 ? `
-                            <div>
-                                <h5 style="color: var(--gray-600); margin-bottom: var(--space-sm);">Items compartidos:</h5>
-                                ${persona.sharedItems.map(item => `
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-xs);">
-                                        <span>${item.descripcion} (dividido entre ${item.totalParticipantes})</span>
-                                        <span>$${item.precio.toFixed(2)}</span>
-                                    </div>
-                                `).join('')}
+                        ${person.sharedItemsList ? `
+                            <div style="margin-bottom: var(--space-md);">
+                                <p style="color: var(--gray-700); margin-bottom: var(--space-xs);">Items compartidos:</p>
+                                ${person.sharedItemsList}
                             </div>
                         ` : ''}
+                        
+                        <div class="divider" style="margin: var(--space-md) 0;"></div>
+                        
+                        <div style="color: var(--gray-700);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-xs);">
+                                <span>Subtotal:</span>
+                                <span>$${person.subtotal.toFixed(2)}</span>
+                            </div>
+                            ${person.tip > 0 ? `
+                                <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-xs);">
+                                    <span>Propina (${person.tip}%):</span>
+                                    <span>$${person.tipAmount.toFixed(2)}</span>
+                                </div>
+                            ` : ''}
+                            <div style="display: flex; justify-content: space-between; font-weight: bold; color: var(--primary); margin-top: var(--space-xs);">
+                                <span>Total:</span>
+                                <span>$${person.total.toFixed(2)}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
-                
-                results.appendChild(resultCard);
             });
 
-            const totalCard = document.createElement('div');
-            totalCard.className = 'result-card animate-in';
-            totalCard.innerHTML = `
-                <h3 style="color: var(--primary); margin-bottom: var(--space-md);">Total General</h3>
-                <div class="total-amount">$${totalGeneral.toFixed(2)}</div>
-                <p style="color: var(--gray-600); margin-top: var(--space-sm);">Incluyendo todas las propinas</p>
+            resultHTML += `
+                <div class="divider" style="margin: var(--space-lg) 0;"></div>
+                <div style="text-align: center;">
+                    <h4 style="color: var(--primary); margin-bottom: var(--space-xs);">Total General</h4>
+                    <p style="font-size: 1.5em; font-weight: bold; color: var(--primary);">$${totalGeneral.toFixed(2)}</p>
+                </div>
             `;
-            results.appendChild(totalCard);
+
+            modalContent.innerHTML = resultHTML;
+            showModal();
         }
 
-        function toggleDescription(element) {
-            const content = element.nextElementSibling;
-            const icon = element.querySelector('.toggle-icon');
-            
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                icon.textContent = '−';
-                content.classList.add('animate-in');
-            } else {
-                content.style.display = 'none';
-                icon.textContent = '+';
+        function showModal() {
+            const modal = document.getElementById('resultsModal');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('resultsModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('resultsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
             }
-        }
+        });
 
-        function addFirstPerson() {
-            const startButton = document.getElementById('startButton');
-            startButton.textContent = 'Agregar persona';
-            startButton.onclick = addPerson;
-            startButton.className = 'button button-tertiary';
-            
-            addPerson();
+        function resetCalculator() {
+            if (confirm('¿Estás seguro de que quieres comenzar una nueva cuenta? Se perderán todos los datos actuales.')) {
+                // Reiniciar variables
+                personCount = 0;
+                sharedItemCount = 0;
+
+                // Limpiar contenedores
+                document.getElementById('people-container').innerHTML = '';
+                document.getElementById('shared-items-container').innerHTML = '';
+                document.getElementById('calculateButton').style.display = 'none';
+
+                // Cerrar modal
+                closeModal();
+
+                // Reiniciar botón de inicio
+                const startButton = document.getElementById('startButton');
+                startButton.textContent = 'Comenzar';
+                startButton.onclick = addFirstPerson;
+                startButton.className = 'button button-primary';
+            }
         }
     </script>
 </body>
