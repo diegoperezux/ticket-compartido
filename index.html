@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>De a como nos toca!</title>
+    <title>Divide la cuenta</title>
     <style>
         /* Variables CSS para fácil personalización desde Figma */
         :root {
@@ -300,6 +300,7 @@
                 </div>
                 <div id="items-${personCount}"></div>
                 
+      
       <div class="divider"></div>
        
                 <div style="display: flex; gap: var(--space-md); justify-content: center; margin-top: var(--space-md);">
@@ -322,8 +323,12 @@
             const itemDiv = document.createElement('div');
             itemDiv.className = 'input-group animate-in';
             
+          
             itemDiv.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-sm); align-items: start;">
+             
+         <div class="divider"></div>
+
+   <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-sm); align-items: start;">
     <div>
         <label class="label">Nombre del platillo</label>
         <input type="text" class="input" placeholder="Escribe aquí">
