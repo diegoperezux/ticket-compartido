@@ -371,17 +371,28 @@
             </div>
         </div>
 
-        <div id="people-container"></div>
-
         <div class="button-group" style="display: flex; gap: var(--space-md); justify-content: center; margin-bottom: var(--space-xl);">
             <button onclick="addFirstPerson()" class="button button-primary" id="startButton">
                 Comenzar
             </button>
         </div>
 
+        <div id="people-container"></div>
+
+        <div id="action-buttons" style="display: none; margin: var(--space-xl) 0;">
+            <div class="button-group" style="display: flex; gap: var(--space-md); justify-content: center;">
+                <button onclick="addPerson()" class="button button-tertiary" id="addPersonButton">
+                    Agregar persona
+                </button>
+                <button onclick="addSharedItem()" class="button button-secondary" id="sharedButton">
+                    Agregar platillo compartido
+                </button>
+            </div>
+        </div>
+
         <div id="shared-items-container"></div>
 
-        <div class="divider" style="margin: var(--space-sm) 0;"></div>
+        <div class="divider" style="margin: var(--space-xl) 0;"></div>
 
         <button onclick="calculateTotal()" class="button button-primary" style="width: 100%; margin-top: var(--space-xs); display: none;" id="calculateButton">
             Calcular totales
@@ -411,14 +422,13 @@
         let personCount = 0;
         let sharedItemCount = 0;
         function addFirstPerson() {
-            // Agregar la primera persona
-            addPerson();
+            // Ocultar el botón de comenzar
+            document.getElementById('startButton').style.display = 'none';
             
-            // Cambiar el botón de comenzar
-            const startButton = document.getElementById('startButton');
-            startButton.textContent = 'Agregar persona';
-            startButton.onclick = addPerson;
-            startButton.className = 'button button-tertiary';
+            // Mostrar los botones de acción
+            document.getElementById('action-buttons').style.display = 'block';
+            
+            addPerson();
         }
 
         function addPerson() {
@@ -468,9 +478,6 @@
                             id="addItemBtn-${personCount}" 
                             style="display: none;">
                         Agregar otro platillo
-                    </button>
-                    <button onclick="addSharedItem()" class="button button-secondary">
-                        Agregar platillo compartido
                     </button>
                     ${personCount > 1 ? `
                         <button onclick="deletePerson(${personCount})" class="button button-danger">
@@ -1008,6 +1015,7 @@
 
                 // Reiniciar botón de inicio
                 const startButton = document.getElementById('startButton');
+                startButton.style.display = 'block';
                 startButton.textContent = 'Comenzar';
                 startButton.onclick = addFirstPerson;
                 startButton.className = 'button button-primary';
